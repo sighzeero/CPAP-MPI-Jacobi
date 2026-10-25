@@ -1,0 +1,8 @@
+/build/
+/results/*
+!/results/.gitkeep
+/logs/
+.DS_Store
+__pycache__/
+
+/src/jacobi_mpi_bin

@@ -1,0 +1,2 @@
+compute-0-0 slots=16
+compute-0-1 slots=16
