@@ -41,4 +41,4 @@ for NP in 1 2 4 8 16 32 64; do
         (cd "$RUN"; "${CMD[@]}" 2>&1 | tee run.log)
     done
 done
-python3 "$ROOT/scripts/summarize.py" "$CAMPAIGN"
+"${PYTHON:-python}" "$ROOT/scripts/summarize.py" "$CAMPAIGN"

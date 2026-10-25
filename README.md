@@ -21,7 +21,7 @@ Il codice è suddiviso in `jacobi.c` per l'avvio MPI, `matrix.c` per il caricame
 
 ## Compilazione
 
-Servono un compilatore C, MPI 3 o superiore e make. Python 3 è usato dai test e dallo script di riepilogo. Tutti i comandi seguenti vanno eseguiti dalla radice del progetto.
+Servono un compilatore C, MPI 3 o superiore e make. Python 2.7 o 3 è usato dai test e dallo script di riepilogo. Tutti i comandi seguenti vanno eseguiti dalla radice del progetto.
 
 ```bash
 make
@@ -90,3 +90,9 @@ I tempi misurati escludono il caricamento della matrice e includono la costruzio
 Sono incluse `test10`, `ecology2` e `pwtk` in formato Matrix Market. Se manca un file dei termini noti `nome_b.mtx` accanto alla matrice, viene generato `b = A·1`, così la soluzione attesa è il vettore di uno. Un file dei termini noti esplicito deve contenere `N 1` seguito dagli N valori.
 
 La licenza del progetto di origine è riportata in `LICENSE`.
+
+Gli script sono compatibili con Python 2.7.5. Il comando predefinito è `python`; per usarne un altro: `make test PYTHON=python3` oppure `PYTHON=python3 bash scripts/run_experiments_MPI.sh`. Per passare opzioni MPI ai test sul server:
+
+```bash
+MPI_TEST_FLAGS="--mca btl self,vader,openib --bind-to none" make test
+```

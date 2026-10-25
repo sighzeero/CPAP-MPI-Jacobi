@@ -1,4 +1,5 @@
 MPICC = mpicc
+PYTHON ?= python
 CFLAGS = -O3 -std=gnu99 -Wall -Wextra
 CPPFLAGS =
 LDLIBS = -lm
@@ -10,6 +11,6 @@ src/jacobi_mpi_bin: $(SOURCES) $(HEADERS) Makefile
 	mkdir -p results
 	$(MPICC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o $@ $(LDLIBS)
 test: all
-	python3 tests/check_mpi.py
+	$(PYTHON) tests/check_mpi.py
 clean:
 	rm -f src/jacobi_mpi_bin
