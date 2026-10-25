@@ -1,14 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MATRIX="${1:-$ROOT/big/ecology2/ecology2.mtx}"
+DRY_RUN=0
+if [[ "${1:-}" == "--dry-run" ]]; then
+    DRY_RUN=1
+    shift
+fi
+[[ "$#" -le 1 ]] || { echo "Uso: $0 [--dry-run] [matrice.mtx|nome]" >&2; exit 1; }
+REQUEST="${1:-ecology2.mtx}"
+if [[ -f "$REQUEST" ]]; then
+    MATRIX="$REQUEST"
+elif [[ -f "$ROOT/$REQUEST" ]]; then
+    MATRIX="$ROOT/$REQUEST"
+else
+    # Cerca per nome in big/, anche quando le matrici sono in sottocartelle.
+    NAME="$(basename "$REQUEST")"
+    [[ "$NAME" == *.mtx ]] || NAME="${NAME}.mtx"
+    MATCHES=()
+    while IFS= read -r -d '' FILE; do
+        MATCHES+=("$FILE")
+    done < <(find "$ROOT/big" -type f -name "$NAME" -print0)
+    if [[ "${#MATCHES[@]}" -eq 0 ]]; then
+        echo "Matrice non trovata: $REQUEST (ricerca in $ROOT/big)." >&2
+        exit 1
+    elif [[ "${#MATCHES[@]}" -gt 1 ]]; then
+        echo "Più matrici con nome $NAME: specificare il percorso esatto." >&2
+        printf '  %s\n' "${MATCHES[@]}" >&2
+        exit 1
+    fi
+    MATRIX="${MATCHES[0]}"
+fi
 MATRIX="$(cd "$(dirname "$MATRIX")" && pwd)/$(basename "$MATRIX")"
+echo "Matrice: $MATRIX"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+    exit 0
+fi
 REPEATS="${REPEATS:-5}"
 HOSTFILE_DIR="${HOSTFILE_DIR:-$ROOT/machinefiles}"
 CAMPAIGN="${CAMPAIGN:-$ROOT/results/$(date '+%Y%m%d_%H%M%S')}"
 BIN="$ROOT/src/jacobi_mpi_bin"
-[[ -f "$MATRIX" && -x "$BIN" ]] || { echo 'Matrice o eseguibile assente: eseguire make.' >&2; exit 1; }
+# make ricompila soltanto se necessario.
+make -C "$ROOT"
+[[ -x "$BIN" ]] || { echo "Eseguibile non disponibile: $BIN" >&2; exit 1; }
 [[ "$REPEATS" =~ ^[1-9][0-9]*$ ]] || { echo 'REPEATS deve essere positivo.' >&2; exit 1; }
+mkdir -p "$(dirname "$CAMPAIGN")"
 mkdir "$CAMPAIGN"
 {
     date -u

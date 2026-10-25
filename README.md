@@ -75,7 +75,7 @@ Lo script esegue le configurazioni con **1, 2, 4, 8, 16, 32 e 64 processi**, con
 bash scripts/run_experiments_MPI.sh
 ```
 
-La matrice predefinita è `ecology2`. Per scegliere un'altra matrice o cambiare il numero di ripetizioni:
+La matrice predefinita è `ecology2`: lo script la cerca automaticamente in `big/` e nelle sue sottocartelle. Accetta anche il solo nome (ad esempio `pwtk`) oppure un percorso esplicito. Se trova più copie con lo stesso nome richiede il percorso esatto. Il programma viene compilato automaticamente se necessario. Per scegliere un'altra matrice o cambiare il numero di ripetizioni:
 
 ```bash
 REPEATS=3 bash scripts/run_experiments_MPI.sh ./big/pwtk.mtx
@@ -95,4 +95,11 @@ Gli script sono compatibili con Python 2.7.5. Il comando predefinito è `python`
 
 ```bash
 MPI_TEST_FLAGS="--mca btl self,vader,openib --bind-to none" make test
+```
+
+Per controllare quale matrice verrà usata senza compilare o avviare gli esperimenti:
+
+```bash
+bash scripts/run_experiments_MPI.sh --dry-run
+bash scripts/run_experiments_MPI.sh --dry-run pwtk
 ```
