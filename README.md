@@ -108,14 +108,20 @@ Il raggiungimento del limite di iterazioni senza convergenza non interrompe la c
 
 Configurazioni della campagna:
 
-| Processi MPI | Nodi | Distribuzione dei processi |
+| Processi MPI | Nodi | Distribuzione per nodo |
 |---|---|---|
-| 1, 2, 4, 8, 16 | 1 | Tutti sul primo nodo |
-| 32 | 2 | 16 per nodo |
-| 48 | 3 | 16 per nodo |
-| 64 | 4 | 16 per nodo |
+| 1 | 1 | Un rank su un core |
+| 2 | 1 | 1 rank per socket |
+| 4 | 1 | 2 rank per socket |
+| 8 | 1 | 4 rank per socket |
+| 16 | 1 | 8 rank per socket |
+| 32 | 2 | 8 rank per socket, 16 per nodo |
+| 48 | 3 | 8 rank per socket, 16 per nodo |
+| 64 | 4 | 8 rank per socket, 16 per nodo |
 
-Tutte le configurazioni usano binding al core senza oversubscription. Con 32, 48 e 64 processi vengono utilizzati rispettivamente 2, 3 e 4 nodi, con 16 processi per nodo.
+Il mapping assume 2 socket e 8 core fisici per socket su ogni nodo. Tutte le configurazioni usano `--bind-to core`, senza oversubscription. Da 2 processi in poi il mapping `ppr:N:socket` distribuisce esplicitamente i rank sui due socket. La configurazione a un processo usa `--map-by slot`.
+
+Il manifest registra anche `map_by` e `bind_to`; `command.txt` conserva il comando completo e `run.log` il report dei binding effettivi. Per confrontare le curve usare una campagna completa con questo stesso mapping sia per ecology2 sia per la matrice piena.
 
 ## Generazione di matrici piene di test
 

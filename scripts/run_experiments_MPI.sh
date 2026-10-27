@@ -52,15 +52,21 @@ mkdir "$CAMPAIGN"
     mpicc --showme:version
     shasum -a 256 "$MATRIX" "$BIN" "$ROOT"/src/* "$ROOT/Makefile"
 } > "$CAMPAIGN/environment.txt"
-printf 'processes,repeat,nodes,hostfile,directory\n' > "$CAMPAIGN/manifest.csv"
+printf 'processes,repeat,nodes,hostfile,directory,map_by,bind_to\n' > "$CAMPAIGN/manifest.csv"
 fi
 for NP in 1 2 4 8 16 32 48 64; do
     BIND=core
+    # Cluster: 2 socket per nodo, 8 core fisici per socket.
+    # Un rank per core, distribuzione esplicita su entrambi i socket.
     case "$NP" in
-        1|2|4|8|16) NODES=1; MAP=slot ;;
-        32) NODES=2; MAP=ppr:16:node ;;
-        48) NODES=3; MAP=ppr:16:node ;;
-        64) NODES=4; MAP=ppr:16:node ;;
+        1) NODES=1; MAP=slot ;;
+        2) NODES=1; MAP=ppr:1:socket ;;
+        4) NODES=1; MAP=ppr:2:socket ;;
+        8) NODES=1; MAP=ppr:4:socket ;;
+        16) NODES=1; MAP=ppr:8:socket ;;
+        32) NODES=2; MAP=ppr:8:socket ;;
+        48) NODES=3; MAP=ppr:8:socket ;;
+        64) NODES=4; MAP=ppr:8:socket ;;
     esac
     MF="$HOSTFILE_DIR/mf_${NODES}nodes.txt"
     [[ -f "$MF" ]] || { echo "Hostfile assente: $MF" >&2; exit 1; }
@@ -77,8 +83,8 @@ for NP in 1 2 4 8 16 32 48 64; do
         CMD+=("$BIN" "$MATRIX" M "$NP" 0)
         printf '%q ' "${CMD[@]}" > "$RUN/command.txt"
         printf '\n' >> "$RUN/command.txt"
-        printf '%s,%s,%s,%s,%s\n' "$NP" "$REP" "$NODES" "$MF" "p${NP}_r${REP}" >> "$CAMPAIGN/manifest.csv"
-        echo "MPI: $NP processi, $NODES nodi, ripetizione $REP/$REPEATS"
+        printf '%s,%s,%s,%s,%s,%s,%s\n' "$NP" "$REP" "$NODES" "$MF" "p${NP}_r${REP}" "$MAP" "$BIND" >> "$CAMPAIGN/manifest.csv"
+        echo "MPI: $NP processi, $NODES nodi, map=$MAP, bind=$BIND, ripetizione $REP/$REPEATS"
         (cd "$RUN"; "${CMD[@]}" 2>&1 | tee run.log)
     done
 done
