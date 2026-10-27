@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,16 +40,18 @@ int main(int argc, char **argv) {
         /* Tempi di parete: massimo sui rank, in millisecondi. */
         t->timeval_diff = maximum * 1000.0;
         t->timespec_diff = maximum * 1000.0;
-        success = res->converged;
+        success = isfinite(res->e) && (res->converged || res->k == MAX_ITERATIONS);
         printf("processes=%d iterations=%d relative_update=%.12g converged=%d elapsed_ms=%.9f\n",
-               count, res->k, res->e, success, maximum * 1000.0);
+               count, res->k, res->e, res->converged, maximum * 1000.0);
         if (verbose) {
             printf("Results:");
             for (unsigned int i = 0; i < m->size; ++i) printf(" %.17g", res->x[i]);
             printf("\n");
         }
         if (success) write_results(t, argv[1], count, 'M', m->size);
-        else fprintf(stderr, "Nessuna convergenza: misura esclusa dai risultati.\n");
+        else fprintf(stderr, "Errore numerico: misura esclusa dai risultati.\n");
+        if (success && !res->converged)
+            fprintf(stderr, "Limite di iterazioni raggiunto: tempo salvato per il benchmark.\n");
         free(res->x);
         free(res);
         free(t);

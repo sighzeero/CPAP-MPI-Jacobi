@@ -103,3 +103,5 @@ Per controllare quale matrice verrà usata senza compilare o avviare gli esperim
 bash scripts/run_experiments_MPI.sh --dry-run
 bash scripts/run_experiments_MPI.sh --dry-run pwtk
 ```
+
+Il raggiungimento del limite di iterazioni senza convergenza non interrompe la campagna: il tempo viene salvato e nel log resta `converged=0`. Il riepilogo riporta anche il numero di iterazioni e quante esecuzioni sono convergenti. Per confrontare i tempi a parità di lavoro controllare che il numero di iterazioni coincida; piccole differenze numeriche tra riduzioni MPI possono influenzare il punto di arresto. NaN/Inf e gli errori di esecuzione continuano a interrompere il test.
