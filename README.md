@@ -116,3 +116,24 @@ Configurazioni della campagna:
 | 64 | 4 | 16 per nodo |
 
 Tutte le configurazioni usano binding al core senza oversubscription. Con 32, 48 e 64 processi vengono utilizzati rispettivamente 2, 3 e 4 nodi, con 16 processi per nodo.
+
+## Generazione di matrici piene di test
+
+Lo script `scripts/generate_dense.py` permette di creare matrici piene di ordine N per studiare la scalabilità del solver anche quando tutte le componenti del vettore sono necessarie al calcolo delle righe.
+
+La matrice generata è simmetrica e contiene N sulla diagonale e -1 in tutte le altre posizioni. È quindi strettamente dominante sulla diagonale, perché N è maggiore della somma dei moduli degli altri N-1 elementi della riga, ed è definita positiva. Questa costruzione garantisce la convergenza di Jacobi, ma la rende progressivamente più lenta all'aumentare di N: il fattore di convergenza è (N-1)/N. Si ottiene così un problema con soluzione nota e un numero elevato di iterazioni, utile per misurare le prestazioni.
+
+Ogni riga ha somma 1: senza un file dei termini noti associato, il solver genera `b = A·1`, quindi b e la soluzione attesa sono entrambi vettori di uno. Il generatore scrive direttamente su disco in formato Matrix Market simmetrico, conservando soltanto il triangolo inferiore; il caricamento ricostruisce la matrice piena.
+
+Ad esempio, per creare una matrice 5000 × 5000 ed eseguire la campagna:
+
+```bash
+python scripts/generate_dense.py --size 5000
+bash scripts/run_experiments_MPI.sh dense_5000
+```
+
+Il file prodotto è `big/dense_5000.mtx`. La dimensione si sceglie con `--size`; per specificare anche il percorso di output:
+
+```bash
+python scripts/generate_dense.py --size 6000 --output big/dense_test.mtx
+```
