@@ -32,17 +32,17 @@ else
 fi
 MATRIX="$(cd "$(dirname "$MATRIX")" && pwd)/$(basename "$MATRIX")"
 echo "Matrice: $MATRIX"
-if [[ "$DRY_RUN" -eq 1 ]]; then
-    exit 0
-fi
 REPEATS="${REPEATS:-5}"
 HOSTFILE_DIR="${HOSTFILE_DIR:-$ROOT/machinefiles}"
 CAMPAIGN="${CAMPAIGN:-$ROOT/results/$(date '+%Y%m%d_%H%M%S')}"
 BIN="$ROOT/src/jacobi_mpi_bin"
 # make ricompila soltanto se necessario.
-make -C "$ROOT"
-[[ -x "$BIN" ]] || { echo "Eseguibile non disponibile: $BIN" >&2; exit 1; }
+if [[ "$DRY_RUN" -eq 0 ]]; then
+    make -C "$ROOT"
+    [[ -x "$BIN" ]] || { echo "Eseguibile non disponibile: $BIN" >&2; exit 1; }
+fi
 [[ "$REPEATS" =~ ^[1-9][0-9]*$ ]] || { echo 'REPEATS deve essere positivo.' >&2; exit 1; }
+if [[ "$DRY_RUN" -eq 0 ]]; then
 mkdir -p "$(dirname "$CAMPAIGN")"
 mkdir "$CAMPAIGN"
 {
@@ -53,27 +53,42 @@ mkdir "$CAMPAIGN"
     shasum -a 256 "$MATRIX" "$BIN" "$ROOT"/src/* "$ROOT/Makefile"
 } > "$CAMPAIGN/environment.txt"
 printf 'processes,repeat,nodes,hostfile,directory\n' > "$CAMPAIGN/manifest.csv"
-for NP in 1 2 4 8 16 32 64; do
+fi
+for NP in 1 2 4 8 16 32 50 64; do
+    EXTRA=()
+    BIND=core
     case "$NP" in
-        1) NODES=1; MAP=slot ;;
-        2) NODES=2; MAP=node ;;
-        4) NODES=4; MAP=node ;;
-        *) NODES=4; MAP="ppr:$((NP / 4)):node" ;;
+        1|2|4|8|16) NODES=1; MAP=slot ;;
+        32) NODES=2; MAP=ppr:16:node ;;
+        50)
+            # Replica il punto della tabella: 50 rank su 3 nodi (48 core).
+            # Mapping per nodo: 17, 17, 16 rank; due core sono condivisi.
+            NODES=3; MAP=node
+            EXTRA=(--oversubscribe)
+            BIND=core:overload-allowed
+            ;;
+        64) NODES=4; MAP=ppr:16:node ;;
     esac
     MF="$HOSTFILE_DIR/mf_${NODES}nodes.txt"
     [[ -f "$MF" ]] || { echo "Hostfile assente: $MF" >&2; exit 1; }
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "MPI: $NP processi, $NODES nodi, map=$MAP, bind=$BIND ${EXTRA[*]:-}"
+        continue
+    fi
     for ((REP=1; REP<=REPEATS; REP++)); do
         RUN="$CAMPAIGN/p${NP}_r${REP}"
         mkdir -p "$RUN/results"
         cp "$MF" "$RUN/hostfile.txt"
         CMD=(mpirun --mca btl self,vader,openib -np "$NP" -machinefile "$RUN/hostfile.txt"
-             --map-by "$MAP" --bind-to core --report-bindings
+             --map-by "$MAP" --bind-to "$BIND" "${EXTRA[@]}" --report-bindings
              "$BIN" "$MATRIX" M "$NP" 0)
         printf '%q ' "${CMD[@]}" > "$RUN/command.txt"
         printf '\n' >> "$RUN/command.txt"
         printf '%s,%s,%s,%s,%s\n' "$NP" "$REP" "$NODES" "$MF" "p${NP}_r${REP}" >> "$CAMPAIGN/manifest.csv"
-        echo "MPI: $NP processi, ripetizione $REP/$REPEATS"
+        echo "MPI: $NP processi, $NODES nodi, ripetizione $REP/$REPEATS"
         (cd "$RUN"; "${CMD[@]}" 2>&1 | tee run.log)
     done
 done
-"${PYTHON:-python}" "$ROOT/scripts/summarize.py" "$CAMPAIGN"
+if [[ "$DRY_RUN" -eq 0 ]]; then
+    "${PYTHON:-python}" "$ROOT/scripts/summarize.py" "$CAMPAIGN"
+fi

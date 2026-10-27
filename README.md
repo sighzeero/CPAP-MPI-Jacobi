@@ -69,7 +69,7 @@ Il progetto e i file di input devono essere accessibili agli stessi percorsi da 
 
 ## Esperimenti con script
 
-Lo script esegue le configurazioni con **1, 2, 4, 8, 16, 32 e 64 processi**, con 5 ripetizioni per configurazione. Usa gli hostfile in `machinefiles/`, da adattare ai nodi del cluster.
+Lo script esegue le configurazioni con **1, 2, 4, 8, 16, 32, 50 e 64 processi**, con 5 ripetizioni per configurazione. Usa gli hostfile in `machinefiles/`, da adattare ai nodi del cluster.
 
 ```bash
 bash scripts/run_experiments_MPI.sh
@@ -105,3 +105,14 @@ bash scripts/run_experiments_MPI.sh --dry-run pwtk
 ```
 
 Il raggiungimento del limite di iterazioni senza convergenza non interrompe la campagna: il tempo viene salvato e nel log resta `converged=0`. Il riepilogo riporta anche il numero di iterazioni e quante esecuzioni sono convergenti. Per confrontare i tempi a parità di lavoro controllare che il numero di iterazioni coincida; piccole differenze numeriche tra riduzioni MPI possono influenzare il punto di arresto. NaN/Inf e gli errori di esecuzione continuano a interrompere il test.
+
+Configurazioni della campagna:
+
+| Processi MPI | Nodi | Distribuzione dei processi |
+|---|---|---|
+| 1, 2, 4, 8, 16 | 1 | Tutti sul primo nodo |
+| 32 | 2 | 16 per nodo |
+| 50 | 3 | 17, 17, 16 |
+| 64 | 4 | 16 per nodo |
+
+Il punto a 50 processi su 3 nodi replica il numero di nodi della tabella, ma supera i 48 core fisici disponibili: usa oversubscription e consente la condivisione dei core (`--oversubscribe --bind-to core:overload-allowed`). Non equivale a 50 core fisici distinti; verificare il binding effettivo nel log. Gli altri punti usano binding al core senza oversubscription.
