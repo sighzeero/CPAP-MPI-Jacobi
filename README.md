@@ -69,7 +69,7 @@ Il progetto e i file di input devono essere accessibili agli stessi percorsi da 
 
 ## Esperimenti con script
 
-Lo script esegue le configurazioni con **1, 2, 4, 8, 16, 32, 50 e 64 processi**, con 5 ripetizioni per configurazione. Usa gli hostfile in `machinefiles/`, da adattare ai nodi del cluster.
+Lo script esegue le configurazioni con **1, 2, 4, 8, 16, 32, 48 e 64 processi**, con 5 ripetizioni per configurazione. Usa gli hostfile in `machinefiles/`, da adattare ai nodi del cluster.
 
 ```bash
 bash scripts/run_experiments_MPI.sh
@@ -112,7 +112,7 @@ Configurazioni della campagna:
 |---|---|---|
 | 1, 2, 4, 8, 16 | 1 | Tutti sul primo nodo |
 | 32 | 2 | 16 per nodo |
-| 50 | 3 | 17, 17, 16 |
+| 48 | 3 | 16 per nodo |
 | 64 | 4 | 16 per nodo |
 
-Il punto a 50 processi su 3 nodi replica il numero di nodi della tabella, ma supera i 48 core fisici disponibili: usa oversubscription e consente la condivisione dei core (`--oversubscribe --bind-to core:overload-allowed`). Non equivale a 50 core fisici distinti; verificare il binding effettivo nel log. Gli altri punti usano binding al core senza oversubscription.
+Tutte le configurazioni usano binding al core senza oversubscription. Con 32, 48 e 64 processi vengono utilizzati rispettivamente 2, 3 e 4 nodi, con 16 processi per nodo.

@@ -54,25 +54,18 @@ mkdir "$CAMPAIGN"
 } > "$CAMPAIGN/environment.txt"
 printf 'processes,repeat,nodes,hostfile,directory\n' > "$CAMPAIGN/manifest.csv"
 fi
-for NP in 1 2 4 8 16 32 50 64; do
-    OVERSUBSCRIBE=0
+for NP in 1 2 4 8 16 32 48 64; do
     BIND=core
     case "$NP" in
         1|2|4|8|16) NODES=1; MAP=slot ;;
         32) NODES=2; MAP=ppr:16:node ;;
-        50)
-            # Replica il punto della tabella: 50 rank su 3 nodi (48 core).
-            # Mapping per nodo: 17, 17, 16 rank; due core sono condivisi.
-            NODES=3; MAP=node
-            OVERSUBSCRIBE=1
-            BIND=core:overload-allowed
-            ;;
+        48) NODES=3; MAP=ppr:16:node ;;
         64) NODES=4; MAP=ppr:16:node ;;
     esac
     MF="$HOSTFILE_DIR/mf_${NODES}nodes.txt"
     [[ -f "$MF" ]] || { echo "Hostfile assente: $MF" >&2; exit 1; }
     if [[ "$DRY_RUN" -eq 1 ]]; then
-        echo "MPI: $NP processi, $NODES nodi, map=$MAP, bind=$BIND, oversubscribe=$OVERSUBSCRIBE"
+        echo "MPI: $NP processi, $NODES nodi, map=$MAP, bind=$BIND"
         continue
     fi
     for ((REP=1; REP<=REPEATS; REP++)); do
@@ -81,9 +74,6 @@ for NP in 1 2 4 8 16 32 50 64; do
         cp "$MF" "$RUN/hostfile.txt"
         CMD=(mpirun --mca btl self,vader,openib -np "$NP" -machinefile "$RUN/hostfile.txt"
              --map-by "$MAP" --bind-to "$BIND" --report-bindings)
-        if [[ "$OVERSUBSCRIBE" -eq 1 ]]; then
-            CMD+=(--oversubscribe)
-        fi
         CMD+=("$BIN" "$MATRIX" M "$NP" 0)
         printf '%q ' "${CMD[@]}" > "$RUN/command.txt"
         printf '\n' >> "$RUN/command.txt"
