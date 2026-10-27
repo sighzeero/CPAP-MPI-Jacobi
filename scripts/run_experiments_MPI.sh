@@ -57,13 +57,13 @@ fi
 for NP in 1 2 4 8 16 32 48 64; do
     BIND=core
     # Cluster: 2 socket per nodo, 8 core fisici per socket.
-    # Un rank per core, distribuzione esplicita su entrambi i socket.
+    # Un rank per core; distribuzione verificata nelle prove sul cluster.
     case "$NP" in
         1) NODES=1; MAP=slot ;;
-        2) NODES=1; MAP=ppr:1:socket ;;
-        4) NODES=1; MAP=ppr:2:socket ;;
-        8) NODES=1; MAP=ppr:4:socket ;;
-        16) NODES=1; MAP=ppr:8:socket ;;
+        2) NODES=2; MAP=ppr:1:node ;;
+        4) NODES=4; MAP=ppr:1:node ;;
+        8) NODES=4; MAP=ppr:1:socket ;;
+        16) NODES=4; MAP=ppr:2:socket ;;
         32) NODES=2; MAP=ppr:8:socket ;;
         48) NODES=3; MAP=ppr:8:socket ;;
         64) NODES=4; MAP=ppr:8:socket ;;

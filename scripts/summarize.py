@@ -20,8 +20,13 @@ with open(os.path.join(campaign, 'manifest.csv'), 'r') as f:
 times = {}
 iterations = {}
 converged = {}
+configurations = {}
 for run in runs:
     p = int(run['processes'])
+    config = (run.get('nodes', ''), run.get('map_by', ''), run.get('bind_to', ''))
+    if p in configurations and configurations[p] != config:
+        raise SystemExit('Configurazioni diverse per {0} processi: non aggregare le misure.'.format(p))
+    configurations[p] = config
     path = os.path.join(campaign, run['directory'], 'results', 'M{0}.txt'.format(p))
     with open(path, 'r') as f:
         lines = f.read().splitlines()
@@ -40,11 +45,11 @@ path = os.path.join(campaign, 'summary.csv')
 output = open(path, 'wb') if sys.version_info[0] == 2 else open(path, 'w', newline='')
 with output as f:
     writer = csv.writer(f)
-    writer.writerow(['processes', 'repeats', 'median_ms', 'min_ms', 'max_ms', 'speedup', 'efficiency', 'min_iterations', 'max_iterations', 'converged_runs'])
+    writer.writerow(['processes', 'repeats', 'median_ms', 'min_ms', 'max_ms', 'speedup', 'efficiency', 'min_iterations', 'max_iterations', 'converged_runs', 'nodes', 'map_by', 'bind_to'])
     for p, values in sorted(times.items()):
         elapsed = median(values)
         speedup = base / elapsed
-        writer.writerow([p, len(values), elapsed, min(values), max(values), speedup, speedup / p, min(iterations[p]), max(iterations[p]), sum(converged[p])])
+        writer.writerow([p, len(values), elapsed, min(values), max(values), speedup, speedup / p, min(iterations[p]), max(iterations[p]), sum(converged[p])] + list(configurations[p]))
 print('Riepilogo: {0}'.format(path))
 
 if len(set(k for values in iterations.values() for k in values)) > 1:
